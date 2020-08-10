@@ -2,6 +2,18 @@
 #include <windows.h>
 using namespace std;
 
+bool isWriteable(const MEMORY_BASIC_INFORMATION &mi) {
+    const auto writeableFlags = PAGE_EXECUTE_READWRITE
+        | PAGE_EXECUTE_WRITECOPY
+        | PAGE_READWRITE
+        | PAGE_WRITECOPY;
+    if ((mi.Protect & writeableFlags) == 0) {
+        return false;
+    } else {
+        return true;
+    }
+}
+
 // Source: https://www.codeproject.com/Articles/4865/Performing-a-hex-dump-of-another-process-s-memory
 void walkMemory(HANDLE hProcess) {
     MEMORY_BASIC_INFORMATION mi;
@@ -20,9 +32,14 @@ void walkMemory(HANDLE hProcess) {
         } else {
             auto lpMemStart = lpMem;
             lpMem = (LPVOID)((size_t)mi.BaseAddress + (size_t)mi.RegionSize);
-            cout << lpMemStart << " - " << lpMem << endl;
+            if (isWriteable(mi)) {
+                cout << lpMemStart << " - " << lpMem << endl;
+                total += mi.RegionSize;
+            }
         }
     }
+
+    cout << "Total bytes: " << total << endl;
 }
 
 
