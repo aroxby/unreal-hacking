@@ -23,7 +23,7 @@ void walkMemory(HANDLE hProcess) {
     LPVOID lpMem = si.lpMinimumApplicationAddress;
     size_t total = 0;
 
-    while (lpMem < si.lpMaximumApplicationAddress) {
+    while (lpMem <= si.lpMaximumApplicationAddress) {
         mi = {0};
         SIZE_T vqr = VirtualQueryEx(hProcess, lpMem, &mi, sizeof mi);
         if (vqr != sizeof mi) {
