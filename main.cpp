@@ -1,7 +1,34 @@
 #include <iostream>
 #include <iomanip>
+#include <sstream>
+#include <vector>
 #include <windows.h>
 using namespace std;
+
+class SimpleException : public exception {
+public:
+    SimpleException(const string &what): msg(what) {}
+    virtual const char *what() const noexcept override { return msg.c_str(); }
+private:
+    const string msg;
+};
+
+class MemoryRegion {
+public:
+    MemoryRegion(void *start, size_t length) : start(start), length(length) {}
+    void *start;
+    size_t length;
+};
+
+void *increasePointer(void *base, size_t addend) {
+    size_t baseAddr = (size_t)base;
+    void *vp = (void*)(baseAddr + addend);
+    return vp;
+}
+
+ostream &operator<<(ostream &os, const MemoryRegion &region) {
+    return os << region.start << " - " << increasePointer(region.start, region.length);
+};
 
 bool isWriteable(const MEMORY_BASIC_INFORMATION &mi) {
     constexpr auto writeableFlags = PAGE_EXECUTE_READWRITE
@@ -16,9 +43,11 @@ bool isWriteable(const MEMORY_BASIC_INFORMATION &mi) {
 }
 
 // Source: https://www.codeproject.com/Articles/4865/Performing-a-hex-dump-of-another-process-s-memory
-void walkMemory(HANDLE hProcess) {
+vector<MemoryRegion> walkMemory(HANDLE hProcess) {
     MEMORY_BASIC_INFORMATION mi;
     SYSTEM_INFO si;
+    vector<MemoryRegion> regions;
+
     GetSystemInfo(&si);
 
     LPVOID lpMem = si.lpMinimumApplicationAddress;
@@ -28,19 +57,22 @@ void walkMemory(HANDLE hProcess) {
         mi = {0};
         SIZE_T vqr = VirtualQueryEx(hProcess, lpMem, &mi, sizeof mi);
         if (vqr != sizeof mi) {
-            cout << "Error: " << lpMem << endl;
-            break;
+            stringstream msg;
+            msg << "VirtualQueryEx returned " << vqr << " with error " << GetLastError();
+            throw SimpleException(msg.str());
         } else {
-            auto lpMemStart = lpMem;
-            lpMem = (LPVOID)((size_t)mi.BaseAddress + (size_t)mi.RegionSize);
+            lpMem = increasePointer(mi.BaseAddress, mi.RegionSize);
             if (isWriteable(mi)) {
-                cout << lpMemStart << " - " << lpMem << endl;
+                MemoryRegion thisRegion(mi.BaseAddress, mi.RegionSize);
+                regions.push_back(thisRegion);
+                cout << thisRegion << endl;
                 total += mi.RegionSize;
             }
         }
     }
 
     cout << "Total bytes: " << total << endl;
+    return regions;
 }
 
 void *createUnrealData() {
@@ -62,26 +94,9 @@ void *createUnrealData() {
     return dataBlockStart;
 }
 
-void dump(const void *vp, size_t length) {
-    const auto oldFlags(cout.flags());
-    const auto oldFill = cout.fill();
-    cout << hex << setfill('0');
-
-    const unsigned char *start = (const unsigned char *)vp;
-    const unsigned char *end = start + length;
-    for(const unsigned char *pos = start; pos < end; pos++) {
-        cout << setw(2) << int(*pos) << " ";
-    }
-    cout << endl;
-
-    cout << setfill(oldFill);
-    cout.flags(oldFlags);
-}
-
 int main() {
     HANDLE victim = GetCurrentProcess();
     const void *unreal = createUnrealData();
-    dump(unreal, 32);
-    // walkMemory(victim);
+    walkMemory(victim);
     return 0;
 }
