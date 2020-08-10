@@ -1,4 +1,5 @@
 #include <iostream>
+#include <iomanip>
 #include <windows.h>
 using namespace std;
 
@@ -42,8 +43,45 @@ void walkMemory(HANDLE hProcess) {
     cout << "Total bytes: " << total << endl;
 }
 
+void *createUnrealData() {
+    char *dataBlock = new char[1024];
+    char *dataBlockStart = dataBlock;
+    memset(dataBlock, 0, 4);
+    dataBlock += 4;
+    memcpy(dataBlock, "None", 4);
+    dataBlock += 4;
+    memset(dataBlock, 0, 8);
+    dataBlock += 8;
+    memcpy(dataBlock, &dataBlock, 8);
+    dataBlock += 8;
+    memset(dataBlock, 2, 1);
+    dataBlock += 1;
+    memset(dataBlock, 0, 3);
+    dataBlock += 3;
+
+    return dataBlockStart;
+}
+
+void dump(const void *vp, size_t length) {
+    const auto oldFlags(cout.flags());
+    const auto oldFill = cout.fill();
+    cout << hex << setfill('0');
+
+    const unsigned char *start = (const unsigned char *)vp;
+    const unsigned char *end = start + length;
+    for(const unsigned char *pos = start; pos < end; pos++) {
+        cout << setw(2) << int(*pos) << " ";
+    }
+    cout << endl;
+
+    cout << setfill(oldFill);
+    cout.flags(oldFlags);
+}
+
 int main() {
     HANDLE victim = GetCurrentProcess();
-    walkMemory(victim);
+    const void *unreal = createUnrealData();
+    dump(unreal, 32);
+    // walkMemory(victim);
     return 0;
 }
