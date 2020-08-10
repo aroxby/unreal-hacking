@@ -42,7 +42,6 @@ void walkMemory(HANDLE hProcess) {
     cout << "Total bytes: " << total << endl;
 }
 
-
 int main() {
     HANDLE victim = GetCurrentProcess();
     walkMemory(victim);
