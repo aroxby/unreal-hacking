@@ -3,7 +3,7 @@
 using namespace std;
 
 bool isWriteable(const MEMORY_BASIC_INFORMATION &mi) {
-    const auto writeableFlags = PAGE_EXECUTE_READWRITE
+    constexpr auto writeableFlags = PAGE_EXECUTE_READWRITE
         | PAGE_EXECUTE_WRITECOPY
         | PAGE_READWRITE
         | PAGE_WRITECOPY;
