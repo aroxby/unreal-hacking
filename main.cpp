@@ -4,26 +4,22 @@ using namespace std;
 
 // Source: https://www.codeproject.com/Articles/4865/Performing-a-hex-dump-of-another-process-s-memory
 void walkMemory(HANDLE hProcess) {
-    MEMORY_BASIC_INFORMATION mbi;
+    MEMORY_BASIC_INFORMATION mi;
     SYSTEM_INFO si;
     GetSystemInfo(&si);
-    
-    LPCVOID lpMem = si.lpMinimumApplicationAddress;
-    cout << "System Range: "
-        << si.lpMinimumApplicationAddress
-        << " - " <<
-        si.lpMaximumApplicationAddress
-        << endl;
-    
+
+    LPVOID lpMem = si.lpMinimumApplicationAddress;
+    size_t total = 0;
+
     while (lpMem < si.lpMaximumApplicationAddress) {
-        mbi = {0};
-        size_t vqr = VirtualQueryEx(hProcess, lpMem, &mbi, sizeof mbi);
-        if (vqr != sizeof mbi) {
+        mi = {0};
+        SIZE_T vqr = VirtualQueryEx(hProcess, lpMem, &mi, sizeof mi);
+        if (vqr != sizeof mi) {
             cout << "Error: " << lpMem << endl;
             break;
         } else {
             auto lpMemStart = lpMem;
-            lpMem = (LPVOID)((size_t)mbi.BaseAddress + (size_t)mbi.RegionSize);
+            lpMem = (LPVOID)((size_t)mi.BaseAddress + (size_t)mi.RegionSize);
             cout << lpMemStart << " - " << lpMem << endl;
         }
     }
