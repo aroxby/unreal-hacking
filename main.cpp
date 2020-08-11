@@ -26,6 +26,11 @@ void *increasePointer(void *base, size_t addend) {
     return vp;
 }
 
+ptrdiff_t pointerOffset(const void *a, const void *b) {
+    ptrdiff_t offset = (ptrdiff_t)a - (ptrdiff_t)b;
+    return offset;
+}
+
 ostream &operator<<(ostream &os, const MemoryRegion &region) {
     return os << region.start << " - " << increasePointer(region.start, region.length);
 };
@@ -136,15 +141,16 @@ void ScanProcessMemory(HANDLE hProcess, const vector<MemoryRegion> &regions, con
         if (!data) {
             continue;
         }
-        void *result;
         size_t remainingBytes = region.length;
+        size_t localToRemote = pointerOffset(region.start, data);
+        void *result;
         do {
             result = memmem(data, remainingBytes, goal, goalLength);
             if (result) {
-                cout << "Found at " << result << endl;  // FIXME: this is local address
-                size_t distance = (size_t)result - (size_t)data;
+                cout << "Found at " << increasePointer(result, localToRemote) << endl;
+                size_t searchDistance = pointerOffset(data, result);
                 data = increasePointer(result, goalLength);
-                remainingBytes -= goalLength + distance;
+                remainingBytes -= goalLength + searchDistance;
             }
         } while(result);
     }
