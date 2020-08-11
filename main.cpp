@@ -131,7 +131,6 @@ unique_ptr<unsigned char> CopyProcessMemory(HANDLE hProcess, const MemoryRegion 
 
 void ScanProcessMemory(HANDLE hProcess, const vector<MemoryRegion> &regions, const void *goal, size_t goalLength) {
     for(MemoryRegion region : regions) {
-        cout << region << endl;
         unique_ptr<unsigned char> dataPointer = CopyProcessMemory(hProcess, region);
         void *data = dataPointer.get();
         if (!data) {
