@@ -133,9 +133,10 @@ void ScanProcessMemory(HANDLE hProcess, const vector<MemoryRegion> &regions, con
         do {
             result = memmem(data, remainingBytes, goal, goalLength);
             if (result) {
-                cout << "Found at " << result << endl;
-                data = increasePointer(data, goalLength);
-                remainingBytes -= goalLength;
+                cout << "Found at " << result << endl;  // FIXME: this is local address
+                size_t distance = (size_t)result - (size_t)data;
+                data = increasePointer(result, goalLength);
+                remainingBytes -= goalLength + distance;
             }
         } while(result);
     }
