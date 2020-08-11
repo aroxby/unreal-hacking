@@ -110,14 +110,14 @@ unique_ptr<unsigned char> CopyProcessMemory(HANDLE hProcess, const MemoryRegion 
     SIZE_T bytesRead = 0;
     BOOL rpr = ReadProcessMemory(hProcess, region.start, bufferPointer.get(), region.length, &bytesRead);
     if(!rpr) {
-            stringstream msg;
-            msg << "ReadProcessMemory returned " << rpr << " with error " << GetLastError();
-            throw SimpleException(msg.str());
+        stringstream msg;
+        msg << "ReadProcessMemory returned " << rpr << " with error " << GetLastError();
+        throw SimpleException(msg.str());
     }
     if(bytesRead != region.length) {
-            stringstream msg;
-            msg << "Expected to read " << region.length << " bytes but read " << bytesRead;
-            throw SimpleException(msg.str());
+        stringstream msg;
+        msg << "Expected to read " << region.length << " bytes but read " << bytesRead;
+        throw SimpleException(msg.str());
     }
     return bufferPointer;
 }
