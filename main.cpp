@@ -65,7 +65,6 @@ vector<MemoryRegion> getProcessMemoryRegions(HANDLE hProcess) {
             if (isWriteable(mi)) {
                 MemoryRegion thisRegion(mi.BaseAddress, mi.RegionSize);
                 regions.push_back(thisRegion);
-                cout << thisRegion << endl;
                 total += mi.RegionSize;
             }
         }
@@ -145,6 +144,7 @@ void ScanProcessMemory(HANDLE hProcess, const vector<MemoryRegion> &regions, con
 int main() {
     HANDLE victim = GetCurrentProcess();
     const void *unreal = createUnrealData();
+    cout << "Unreal data is at " << unreal << endl;
     auto regions = getProcessMemoryRegions(victim);
     ScanProcessMemory(victim, regions, "\0\0\0\0None\0\0\0\0\0\0\0", 16);
     return 0;
