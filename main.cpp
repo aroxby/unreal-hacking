@@ -43,7 +43,7 @@ bool isWriteable(const MEMORY_BASIC_INFORMATION &mi) {
 }
 
 // Source: https://www.codeproject.com/Articles/4865/Performing-a-hex-dump-of-another-process-s-memory
-vector<MemoryRegion> walkMemory(HANDLE hProcess) {
+vector<MemoryRegion> getProcessMemoryRegions(HANDLE hProcess) {
     MEMORY_BASIC_INFORMATION mi;
     SYSTEM_INFO si;
     vector<MemoryRegion> regions;
@@ -94,9 +94,57 @@ void *createUnrealData() {
     return dataBlockStart;
 }
 
+void *memmem(void *haystack, size_t haystacklen, const void *needle, size_t needlelen) {
+    while(haystacklen >= needlelen) {
+        if(!memcmp(haystack, needle, needlelen)) {
+            return haystack;
+        } else {
+            haystack = increasePointer(haystack, 1);
+            haystacklen--;
+        }
+    }
+    return nullptr;
+}
+
+unique_ptr<unsigned char> CopyProcessMemory(HANDLE hProcess, const MemoryRegion &region) {
+    unique_ptr<unsigned char> bufferPointer(new unsigned char[region.length]);
+    SIZE_T bytesRead = 0;
+    BOOL rpr = ReadProcessMemory(hProcess, region.start, bufferPointer.get(), region.length, &bytesRead);
+    if(!rpr) {
+            stringstream msg;
+            msg << "ReadProcessMemory returned " << rpr << " with error " << GetLastError();
+            throw SimpleException(msg.str());
+    }
+    if(bytesRead != region.length) {
+            stringstream msg;
+            msg << "Expected to read " << region.length << " bytes but read " << bytesRead;
+            throw SimpleException(msg.str());
+    }
+    return bufferPointer;
+}
+
+void ScanProcessMemory(HANDLE hProcess, const vector<MemoryRegion> &regions, const void *goal, size_t goalLength) {
+    for(MemoryRegion region : regions) {
+        cout << region << endl;
+        unique_ptr<unsigned char> dataPointer = CopyProcessMemory(hProcess, region);
+        void *data = dataPointer.get();
+        void *result;
+        size_t remainingBytes = region.length;
+        do {
+            result = memmem(data, remainingBytes, goal, goalLength);
+            if (result) {
+                cout << "Found at " << result << endl;
+                data = increasePointer(data, goalLength);
+                remainingBytes -= goalLength;
+            }
+        } while(result);
+    }
+}
+
 int main() {
     HANDLE victim = GetCurrentProcess();
     const void *unreal = createUnrealData();
-    walkMemory(victim);
+    auto regions = getProcessMemoryRegions(victim);
+    ScanProcessMemory(victim, regions, "\0\0\0\0None\0\0\0\0\0\0\0", 16);
     return 0;
 }
