@@ -110,9 +110,16 @@ unique_ptr<unsigned char> CopyProcessMemory(HANDLE hProcess, const MemoryRegion 
     SIZE_T bytesRead = 0;
     BOOL rpr = ReadProcessMemory(hProcess, region.start, bufferPointer.get(), region.length, &bytesRead);
     if(!rpr) {
-        stringstream msg;
-        msg << "ReadProcessMemory returned " << rpr << " with error " << GetLastError();
-        throw SimpleException(msg.str());
+        DWORD gle = GetLastError();
+        if (gle == ERROR_PARTIAL_COPY && bytesRead == 0) {
+            // This region is probably all gone
+            cerr << "Could not read region " << region << endl;
+            return unique_ptr<unsigned char>(nullptr);
+        } else {
+            stringstream msg;
+            msg << "ReadProcessMemory returned " << rpr << " with error " << gle;
+            throw SimpleException(msg.str());
+        }
     }
     if(bytesRead != region.length) {
         stringstream msg;
@@ -127,6 +134,9 @@ void ScanProcessMemory(HANDLE hProcess, const vector<MemoryRegion> &regions, con
         cout << region << endl;
         unique_ptr<unsigned char> dataPointer = CopyProcessMemory(hProcess, region);
         void *data = dataPointer.get();
+        if (!data) {
+            continue;
+        }
         void *result;
         size_t remainingBytes = region.length;
         do {
