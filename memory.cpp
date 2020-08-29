@@ -6,6 +6,11 @@
 #include "memory.h"
 using namespace std;
 
+bool MemoryRegion::includes(const void *address) {
+    const void *end = increasePointer(start, length);
+    return address < end;
+}
+
 void *increasePointer(void *base, size_t addend) {
     size_t baseAddr = (size_t)base;
     void *vp = (void*)(baseAddr + addend);
@@ -22,6 +27,7 @@ ostream &operator<<(ostream &os, const MemoryRegion &region) {
 };
 
 bool isWriteable(const MEMORY_BASIC_INFORMATION &mi) {
+
     constexpr auto writeableFlags = PAGE_EXECUTE_READWRITE
         | PAGE_EXECUTE_WRITECOPY
         | PAGE_READWRITE
@@ -119,6 +125,6 @@ void ScanProcessMemory(HANDLE hProcess, const vector<MemoryRegion> &regions, con
                 data = increasePointer(result, goalLength);
                 remainingBytes -= goalLength + searchDistance;
             }
-        } while(result);
+        } while(result && region.includes(result));
     }
 }

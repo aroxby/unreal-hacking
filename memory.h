@@ -8,9 +8,11 @@
 
 class MemoryRegion {
 public:
-    MemoryRegion(void *start, size_t length) : start(start), length(length) {}
     void *start;
     size_t length;
+
+    MemoryRegion(void *start, size_t length) : start(start), length(length) {}
+    bool includes(const void *address);
 };
 
 std::ostream &operator<<(std::ostream &os, const MemoryRegion &region);
