@@ -1,6 +1,7 @@
 #include <iostream>
 #include <windows.h>
 #include "memory.h"
+#include "processes.h"
 using namespace std;
 
 void *createUnrealData() {
@@ -23,7 +24,7 @@ void *createUnrealData() {
 }
 
 int main() {
-    HANDLE victim = GetCurrentProcess();
+    HANDLE victim = openProcessByName("unreal-hacking.exe");
     const void *unreal = createUnrealData();
     cout << "Unreal data is at " << unreal << endl;
     auto regions = getProcessMemoryRegions(victim);
