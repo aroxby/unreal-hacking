@@ -56,7 +56,7 @@ vector<MemoryRegion> getProcessMemoryRegions(HANDLE hProcess) {
         if (vqr != sizeof mi) {
             stringstream msg;
             msg << "VirtualQueryEx returned " << vqr << " with error " << GetLastError();
-            throw SimpleException(msg.str());
+            throw MemoryAPIError(msg.str());
         } else {
             lpMem = increasePointer(mi.BaseAddress, mi.RegionSize);
             if (isWriteable(mi)) {
@@ -96,13 +96,13 @@ unique_ptr<unsigned char> CopyProcessMemory(HANDLE hProcess, const MemoryRegion 
         } else {
             stringstream msg;
             msg << "ReadProcessMemory returned " << rpr << " with error " << gle;
-            throw SimpleException(msg.str());
+            throw MemoryAPIError(msg.str());
         }
     }
     if(bytesRead != region.length) {
         stringstream msg;
         msg << "Expected to read " << region.length << " bytes but read " << bytesRead;
-        throw SimpleException(msg.str());
+        throw MemoryAPIError(msg.str());
     }
     return bufferPointer;
 }

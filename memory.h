@@ -5,6 +5,9 @@
 #include <memory>
 #include <vector>
 #include <windows.h>
+#include "exceptions.h"
+
+EXCEPTIONTYPE(MemoryAPIError);
 
 class MemoryRegion {
 public:

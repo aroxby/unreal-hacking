@@ -12,4 +12,9 @@ private:
     const std::string msg;
 };
 
+#define EXCEPTIONTYPE(TYPENAME) \
+class TYPENAME : public SimpleException { \
+    public: TYPENAME(const std::string &what) : SimpleException(what) {} \
+};
+
 #endif//_INC_EXCEPTIONS_H_
