@@ -1,48 +1,9 @@
-#include <memory>
+#include <iostream>
 #include <sstream>
-#include <cstdio>
 #include <cstring>
-#include "exceptions.h"
 #include "memory.h"
+#include "unreal.h"
 using namespace std;
-
-class UnrealObjectRef {
-public:
-    static UnrealObjectRef readFromAddress(const void *addr);
-    UnrealObjectRef(unsigned long index, const char *name, const void *data, const void *nextAddr);
-    UnrealObjectRef next();
-    void dump();
-
-    unsigned long index;
-    const char *name;
-    const void *data;
-
-private:
-    const void *nextAddr;
-    friend class WritableObjectChain;
-};
-
-class ObjectChain {
-public:
-    ObjectChain(const void *baseAddress);
-    UnrealObjectRef first() const;
-
-private:
-    const void *head;
-};
-
-class WritableObjectChain : public ObjectChain {
-public:
-    static WritableObjectChain allocateChain(size_t bytes);
-
-    WritableObjectChain(void *baseAddress);
-    void appendObject(const UnrealObjectRef &obj);
-
-private:
-    size_t remainingBytes;
-    UnrealObjectRef tail;
-    unique_ptr<unsigned char> allocated;
-};
 
 UnrealObjectRef UnrealObjectRef::readFromAddress(const void *addr) {
     const unsigned long *nextIndex = (const unsigned long *)addr;
@@ -62,7 +23,12 @@ UnrealObjectRef UnrealObjectRef::next() {
 }
 
 void UnrealObjectRef::dump() {
-    printf("%i, %p(%s), %p, %p\n", int(index), name, name, data, nextAddr);
+    cout << '('
+        << int(index) << ", "
+        << (void*)(name) << '(' << name << "), "
+        << data << ", "
+        << nextAddr
+        << ")\n";
 }
 
 ObjectChain::ObjectChain(const void *baseAddress) : head(baseAddress) {
@@ -89,7 +55,7 @@ void WritableObjectChain::appendObject(const UnrealObjectRef &obj) {
     if (totalBytes > remainingBytes) {
         stringstream msg;
         msg << totalBytes << " require but only " << remainingBytes << " are available!";
-        throw SimpleException(msg.str());
+        throw ChainOverflowError(msg.str());
     } else {
         unsigned long nextIndex = tail.index + 2;
         void *nextWrite = (void *)tail.nextAddr;
