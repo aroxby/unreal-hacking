@@ -6,10 +6,19 @@
 using namespace std;
 
 int main() {
-    HANDLE victim = openProcessByName("unreal-hacking.exe");
     const void *unreal = createUnrealData();
     cout << "Unreal data is at " << unreal << endl;
+
+    HANDLE victim = openProcessByName("unreal-hacking.exe");
     auto regions = getProcessMemoryRegions(victim);
-    ScanProcessMemory(victim, regions, "\0\0\0\0None\0\0\0\0\0\0\0", 16);
+
+    std::vector<RemoteDataReference> remoteMatches(
+        ScanProcessMemory(victim, regions, "\0\0\0\0None\0\0\0\0\0\0\0", 16)
+    );
+
+    for(auto match : remoteMatches) {
+        cout << "Found at " << match.remote << endl;
+    }
+
     return 0;
 }

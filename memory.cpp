@@ -123,7 +123,6 @@ std::vector<RemoteDataReference> ScanProcessMemory(
         do {
             result = memmem(data, remainingBytes, goal, goalLength);
             if (result) {
-                cout << "Found at " << increasePointer(result, localToRemote) << endl;
                 size_t searchDistance = pointerOffset(data, result);
                 data = increasePointer(result, goalLength);
                 remainingBytes -= goalLength + searchDistance;
