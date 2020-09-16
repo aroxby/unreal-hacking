@@ -29,7 +29,7 @@ ostream &UnrealObjectRef::dump(ostream &os) const {
         << int(index) << ", "
         << (void*)(name) << '(' << name << "), "
         << data
-        << ")\n";
+        << ')';
 }
 
 ostream &operator<<(ostream &os, const UnrealObjectRef &obj) {
@@ -48,10 +48,16 @@ UnrealObjectRef ObjectChain::Iterator::operator*() {
 }
 
 void ObjectChain::Iterator::operator++() {
-    size_t offset = (**this).totalLength();
+    UnrealObjectRef oldRef = **this;
+    unsigned long oldIndex = oldRef.index;
+    size_t offset = oldRef.totalLength();
+
     readAddress = increasePointer(readAddress, offset);
-    // FIXME: The chain will read infinitely!
-    readAddress = nullptr;
+    // FIXME: Possible read overflow
+    UnrealObjectRef newRef = **this;
+    if(newRef.index != oldIndex + 2) {
+        readAddress = nullptr;
+    }
 }
 
 bool ObjectChain::Iterator::operator!=(const ObjectChain::Iterator &other) {
@@ -109,6 +115,8 @@ unique_ptr<WritableObjectChain> createUnrealData() {
     WritableObjectChain localChain = WritableObjectChain::allocateChain(1024);
     unique_ptr<WritableObjectChain> chain(new WritableObjectChain(move(localChain)));
     UnrealObjectRef none(0, "None", nullptr);
+    UnrealObjectRef prop(0, "IntProperty", nullptr);
     chain.get()->appendObject(none);
+    chain.get()->appendObject(prop);
     return chain;
 }

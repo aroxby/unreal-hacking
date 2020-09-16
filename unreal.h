@@ -28,7 +28,6 @@ public:
     public:
         Iterator(const void *readAddress);
         UnrealObjectRef operator*();
-        // FIXME: Possible read overflow
         void operator++();
         bool operator!=(const Iterator &other);
 
