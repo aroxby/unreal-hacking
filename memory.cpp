@@ -5,6 +5,14 @@
 #include "memory.h"
 using namespace std;
 
+MemoryRegion::MemoryRegion(void *start, size_t length) : start(start), length(length) {
+}
+
+RemoteDataReference::RemoteDataReference(
+    const void *local, const void *remote, const std::shared_ptr<const void> localCopy
+) : local(local), remote(remote), localCopy(localCopy) {
+}
+
 bool MemoryRegion::includes(const void *address) {
     const void *end = increasePointer(start, length);
     return address < end;

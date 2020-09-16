@@ -14,7 +14,7 @@ public:
     void *start;
     size_t length;
 
-    MemoryRegion(void *start, size_t length) : start(start), length(length) {}
+    MemoryRegion(void *start, size_t length);
     bool includes(const void *address);
 };
 
@@ -22,7 +22,7 @@ class RemoteDataReference {
 public:
     RemoteDataReference(
         const void *local, const void *remote, const std::shared_ptr<const void> localCopy
-    ) : local(local), remote(remote), localCopy(localCopy) {}
+    );
     const void * const local;
     const void * const remote;
     const std::shared_ptr<const void> localCopy;
