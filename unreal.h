@@ -9,25 +9,37 @@ EXCEPTIONTYPE(ChainOverflowError);
 class UnrealObjectRef {
 public:
     static UnrealObjectRef readFromAddress(const void *addr);
-    UnrealObjectRef(unsigned long index, const char *name, const void *data, const void *nextAddr);
-    UnrealObjectRef next() const;
+    UnrealObjectRef(unsigned long index, const char *name, const void *data);
+    size_t totalLength() const;
     std::ostream &dump(std::ostream &os) const;
+
+    const static UnrealObjectRef null;
 
     const unsigned long index;
     const char * const name;
     const void * const data;
-
-private:
-    const void * const nextAddr;
 };
 
 std::ostream &operator<<(std::ostream &os, const UnrealObjectRef &obj);
 
 class ObjectChain {
 public:
+    class Iterator {
+    public:
+        Iterator(const void *readAddress);
+        UnrealObjectRef operator*();
+        // FIXME: Possible read overflow
+        void operator++();
+        bool operator!=(const Iterator &other);
+
+    private:
+        const void *readAddress;
+    };
+
     ObjectChain(const void *baseAddress);
-    UnrealObjectRef first() const;
     const void *getBaseAddress() const;
+    Iterator begin() const;
+    Iterator end() const;
 
 private:
     const void *head;

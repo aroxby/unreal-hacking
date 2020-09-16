@@ -5,29 +5,30 @@
 #include "unreal.h"
 using namespace std;
 
+const UnrealObjectRef UnrealObjectRef::null(0, nullptr, nullptr);
+
 UnrealObjectRef UnrealObjectRef::readFromAddress(const void *addr) {
     const unsigned long *nextIndex = (const unsigned long *)addr;
     const char *nextName = (const char *)(nextIndex + 1);
-    const void **nextData = (const void **)(nextName + strlen(nextName) + 7);
-    const void *nextNext = (const void *)(nextData + 1);
+    const void **nextData = (const void **)(nextName + strlen(nextName) + 8);
 
-    return UnrealObjectRef(*nextIndex, nextName, *nextData, nextNext);
+    return UnrealObjectRef(*nextIndex, nextName, *nextData);
 }
 
-UnrealObjectRef::UnrealObjectRef(
-    unsigned long index, const char *name, const void *data, const void *nextAddr
-) : index(index), name(name), data(data), nextAddr(nextAddr) { }
+UnrealObjectRef::UnrealObjectRef(unsigned long index, const char *name, const void *data)
+    : index(index), name(name), data(data) {
+}
 
-UnrealObjectRef UnrealObjectRef::next() const {
-    return UnrealObjectRef::readFromAddress(nextAddr);
+size_t UnrealObjectRef::totalLength() const {
+    size_t length = sizeof(index) + sizeof(data) + strlen(name) + 8;
+    return length;
 }
 
 ostream &UnrealObjectRef::dump(ostream &os) const {
     return os << '('
         << int(index) << ", "
         << (void*)(name) << '(' << name << "), "
-        << data << ", "
-        << nextAddr
+        << data
         << ")\n";
 }
 
@@ -35,17 +36,42 @@ ostream &operator<<(ostream &os, const UnrealObjectRef &obj) {
     return obj.dump(os);
 }
 
-ObjectChain::ObjectChain(const void *baseAddress) : head(baseAddress) {
+ObjectChain::Iterator::Iterator(const void *readAddress) : readAddress(readAddress) {
 }
 
-UnrealObjectRef ObjectChain::first() const {
-    return UnrealObjectRef::readFromAddress(head);
+UnrealObjectRef ObjectChain::Iterator::operator*() {
+    if(readAddress) {
+        return UnrealObjectRef::readFromAddress(readAddress);
+    } else {
+        return UnrealObjectRef::null;
+    }
+}
+
+void ObjectChain::Iterator::operator++() {
+    size_t offset = (**this).totalLength();
+    readAddress = increasePointer(readAddress, offset);
+    // FIXME: The chain will read infinitely!
+    readAddress = nullptr;
+}
+
+bool ObjectChain::Iterator::operator!=(const ObjectChain::Iterator &other) {
+    return readAddress != other.readAddress;
+}
+
+ObjectChain::ObjectChain(const void *baseAddress) : head(baseAddress) {
 }
 
 const void *ObjectChain::getBaseAddress() const {
     return head;
 }
 
+ObjectChain::Iterator ObjectChain::begin() const {
+    return Iterator(head);
+}
+
+ObjectChain::Iterator ObjectChain::end() const {
+    return Iterator(nullptr);
+}
 
 WritableObjectChain WritableObjectChain::allocateChain(size_t bytes) {
     unique_ptr<unsigned char> allocated(new unsigned char[bytes]);
@@ -59,7 +85,7 @@ WritableObjectChain::WritableObjectChain(void *baseAddress) :
     ObjectChain(baseAddress), remainingBytes(0), nextIndex(0), nextWriteAddr(baseAddress) { }
 
 void WritableObjectChain::appendObject(const UnrealObjectRef &obj) {
-    size_t totalBytes = sizeof(obj.index) + sizeof(obj.data) + strlen(obj.name) + 7;
+    size_t totalBytes = sizeof(obj.index) + sizeof(obj.data) + strlen(obj.name) + 8;
 
     if (totalBytes > remainingBytes) {
         stringstream msg;
@@ -70,8 +96,8 @@ void WritableObjectChain::appendObject(const UnrealObjectRef &obj) {
         nextWriteAddr = increasePointer(nextWriteAddr, sizeof(nextIndex));
         strcpy((char *)nextWriteAddr, obj.name);
         nextWriteAddr = increasePointer(nextWriteAddr, strlen(obj.name));
-        memcpy(nextWriteAddr, "\0\0\0\0\0\0", 7);
-        nextWriteAddr = increasePointer(nextWriteAddr, 7);
+        memcpy(nextWriteAddr, "\0\0\0\0\0\0\0", 8);
+        nextWriteAddr = increasePointer(nextWriteAddr, 8);
         memcpy(nextWriteAddr, &obj.data, sizeof(obj.data));
         nextWriteAddr = increasePointer(nextWriteAddr, sizeof(obj.data));
         nextIndex += 2;
@@ -82,7 +108,7 @@ void WritableObjectChain::appendObject(const UnrealObjectRef &obj) {
 unique_ptr<WritableObjectChain> createUnrealData() {
     WritableObjectChain localChain = WritableObjectChain::allocateChain(1024);
     unique_ptr<WritableObjectChain> chain(new WritableObjectChain(move(localChain)));
-    UnrealObjectRef none(0, "None", nullptr, nullptr);
+    UnrealObjectRef none(0, "None", nullptr);
     chain.get()->appendObject(none);
     return chain;
 }

@@ -18,6 +18,10 @@ int main() {
 
     for(auto match : remoteMatches) {
         cout << "Found at " << match.remote << endl;
+        ObjectChain chain(match.local);
+        for(auto object : chain) {
+            cout << '\t' << object << endl;
+        }
     }
 
     return 0;
