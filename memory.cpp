@@ -18,7 +18,7 @@ bool MemoryRegion::includes(const void *address) {
     return address < end;
 }
 
-void *increasePointer(void *base, size_t addend) {
+void *increasePointer(const void *base, size_t addend) {
     size_t baseAddr = (size_t)base;
     void *vp = (void*)(baseAddr + addend);
     return vp;

@@ -30,7 +30,7 @@ public:
 
 std::ostream &operator<<(std::ostream &os, const MemoryRegion &region);
 
-void *increasePointer(void *base, size_t addend);
+void *increasePointer(const void *base, size_t addend);
 ptrdiff_t pointerOffset(const void *a, const void *b);
 
 bool isWriteable(const MEMORY_BASIC_INFORMATION &mi);
