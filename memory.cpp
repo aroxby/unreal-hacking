@@ -110,7 +110,7 @@ ScanResults ScanProcessMemory(
     HANDLE hProcess, const vector<MemoryRegion> &regions, const void *goal, size_t goalLength
 ) {
     set<shared_ptr<const void>> matchingRegions;
-    vector<const void *> matchingAddresses;
+    vector<RemoteMemoryAddress> matchingAddresses;
 
     for(MemoryRegion region : regions) {
         shared_ptr<void> regionPointer = CopyProcessMemory(hProcess, region);
@@ -129,7 +129,9 @@ ScanResults ScanProcessMemory(
                 data = increasePointer(result, goalLength);
                 remainingBytes -= goalLength + searchDistance;
                 matchingRegions.insert(regionPointer);
-                matchingAddresses.push_back(result);
+                matchingAddresses.push_back(
+                    RemoteMemoryAddress(result, increasePointer(result, localToRemote))
+                );
             }
         } while(result && region.includes(result));
     }

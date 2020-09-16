@@ -19,14 +19,21 @@ public:
     bool includes(const void *address);
 };
 
+class RemoteMemoryAddress {
+public:
+    RemoteMemoryAddress(const void *local, const void *remote) : local(local), remote(remote) {}
+    const void * const local;
+    const void * const remote;
+};
+
 class ScanResults {
 public:
     ScanResults(
         const std::set<std::shared_ptr<const void>> &regions,
-        const std::vector<const void *> &addresses
+        const std::vector<RemoteMemoryAddress> &addresses
     ) : regions(regions), addresses(addresses) {}
     const std::set<std::shared_ptr<const void>> regions;
-    const std::vector<const void *> addresses;
+    const std::vector<RemoteMemoryAddress> addresses;
 };
 
 std::ostream &operator<<(std::ostream &os, const MemoryRegion &region);
