@@ -54,7 +54,7 @@ void WritableObjectChain::appendObject(const UnrealObjectRef &obj) {
 
     if (totalBytes > remainingBytes) {
         stringstream msg;
-        msg << totalBytes << " require but only " << remainingBytes << " are available!";
+        msg << totalBytes << " bytes required but only " << remainingBytes << " are available!";
         throw ChainOverflowError(msg.str());
     } else {
         unsigned long nextIndex = tail.index + 2;
