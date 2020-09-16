@@ -1,6 +1,5 @@
 #include <iostream>
 #include <sstream>
-#include <vector>
 #include <windows.h>
 #include "exceptions.h"
 #include "memory.h"
@@ -107,10 +106,15 @@ unique_ptr<unsigned char> CopyProcessMemory(HANDLE hProcess, const MemoryRegion 
     return bufferPointer;
 }
 
-void ScanProcessMemory(HANDLE hProcess, const vector<MemoryRegion> &regions, const void *goal, size_t goalLength) {
+ScanResults ScanProcessMemory(
+    HANDLE hProcess, const vector<MemoryRegion> &regions, const void *goal, size_t goalLength
+) {
+    set<shared_ptr<const void>> matchingRegions;
+    vector<const void *> matchingAddresses;
+
     for(MemoryRegion region : regions) {
-        unique_ptr<unsigned char> dataPointer = CopyProcessMemory(hProcess, region);
-        void *data = dataPointer.get();
+        shared_ptr<void> regionPointer = CopyProcessMemory(hProcess, region);
+        void *data = regionPointer.get();
         if (!data) {
             continue;
         }
@@ -124,7 +128,10 @@ void ScanProcessMemory(HANDLE hProcess, const vector<MemoryRegion> &regions, con
                 size_t searchDistance = pointerOffset(data, result);
                 data = increasePointer(result, goalLength);
                 remainingBytes -= goalLength + searchDistance;
+                matchingRegions.insert(regionPointer);
+                matchingAddresses.push_back(result);
             }
         } while(result && region.includes(result));
     }
+    return ScanResults(matchingRegions, matchingAddresses);
 }

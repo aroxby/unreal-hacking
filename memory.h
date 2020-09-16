@@ -3,6 +3,7 @@
 
 #include <iostream>
 #include <memory>
+#include <set>
 #include <vector>
 #include <windows.h>
 #include "exceptions.h"
@@ -18,6 +19,16 @@ public:
     bool includes(const void *address);
 };
 
+class ScanResults {
+public:
+    ScanResults(
+        const std::set<std::shared_ptr<const void>> &regions,
+        const std::vector<const void *> &addresses
+    ) : regions(regions), addresses(addresses) {}
+    const std::set<std::shared_ptr<const void>> regions;
+    const std::vector<const void *> addresses;
+};
+
 std::ostream &operator<<(std::ostream &os, const MemoryRegion &region);
 
 void *increasePointer(void *base, size_t addend);
@@ -28,7 +39,7 @@ std::vector<MemoryRegion> getProcessMemoryRegions(HANDLE hProcess);
 
 void *memmem(void *haystack, size_t haystacklen, const void *needle, size_t needlelen);
 std::unique_ptr<unsigned char> CopyProcessMemory(HANDLE hProcess, const MemoryRegion &region);
-void ScanProcessMemory(
+ScanResults ScanProcessMemory(
     HANDLE hProcess, const std::vector<MemoryRegion> &regions, const void *goal, size_t goalLength
 );
 
