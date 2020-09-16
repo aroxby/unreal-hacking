@@ -22,13 +22,17 @@ UnrealObjectRef UnrealObjectRef::next() const {
     return UnrealObjectRef::readFromAddress(nextAddr);
 }
 
-void UnrealObjectRef::dump() const {
-    cout << '('
+ostream &UnrealObjectRef::dump(ostream &os) const {
+    return os << '('
         << int(index) << ", "
         << (void*)(name) << '(' << name << "), "
         << data << ", "
         << nextAddr
         << ")\n";
+}
+
+ostream &operator<<(ostream &os, const UnrealObjectRef &obj) {
+    return obj.dump(os);
 }
 
 ObjectChain::ObjectChain(const void *baseAddress) : head(baseAddress) {
@@ -41,6 +45,7 @@ UnrealObjectRef ObjectChain::first() const {
 const void *ObjectChain::getBaseAddress() const {
     return head;
 }
+
 
 WritableObjectChain WritableObjectChain::allocateChain(size_t bytes) {
     unique_ptr<unsigned char> allocated(new unsigned char[bytes]);

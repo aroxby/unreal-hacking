@@ -11,7 +11,7 @@ public:
     static UnrealObjectRef readFromAddress(const void *addr);
     UnrealObjectRef(unsigned long index, const char *name, const void *data, const void *nextAddr);
     UnrealObjectRef next() const;
-    void dump() const;
+    std::ostream &dump(std::ostream &os) const;
 
     const unsigned long index;
     const char * const name;
@@ -20,6 +20,8 @@ public:
 private:
     const void * const nextAddr;
 };
+
+std::ostream &operator<<(std::ostream &os, const UnrealObjectRef &obj);
 
 class ObjectChain {
 public:
