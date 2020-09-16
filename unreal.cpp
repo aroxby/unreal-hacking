@@ -38,6 +38,10 @@ UnrealObjectRef ObjectChain::first() const {
     return UnrealObjectRef::readFromAddress(head);
 }
 
+const void *ObjectChain::getBaseAddress() const {
+    return head;
+}
+
 WritableObjectChain WritableObjectChain::allocateChain(size_t bytes) {
     unique_ptr<unsigned char> allocated(new unsigned char[bytes]);
     WritableObjectChain chain(allocated.get());
@@ -76,12 +80,10 @@ void WritableObjectChain::appendObject(const UnrealObjectRef &obj) {
     }
 }
 
-void *createUnrealData() {
+unique_ptr<WritableObjectChain> createUnrealData() {
     WritableObjectChain localChain = WritableObjectChain::allocateChain(1024);
-    // FIXME: How to manage the life cycle of this.  Should it live forever?
-    WritableObjectChain *chain = new WritableObjectChain(move(localChain));
+    unique_ptr<WritableObjectChain> chain(new WritableObjectChain(move(localChain)));
     UnrealObjectRef none(0, "None", nullptr, nullptr);
-    chain->appendObject(none);
-    void *chainStartAddress = *(void **)chain;  //Hack for private data member
-    return chainStartAddress;
+    chain.get()->appendObject(none);
+    return chain;
 }

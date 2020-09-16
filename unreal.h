@@ -27,6 +27,7 @@ class ObjectChain {
 public:
     ObjectChain(const void *baseAddress);
     UnrealObjectRef first() const;
+    const void *getBaseAddress() const;
 
 private:
     const void *head;
@@ -45,6 +46,6 @@ private:
     std::unique_ptr<unsigned char> allocated;
 };
 
-void *createUnrealData();
+std::unique_ptr<WritableObjectChain> createUnrealData();
 
 #endif//_INC_UNREAL_H_

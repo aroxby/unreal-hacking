@@ -6,8 +6,8 @@
 using namespace std;
 
 int main() {
-    const void *unreal = createUnrealData();
-    cout << "Unreal data is at " << unreal << endl;
+    auto unreal_ptr = createUnrealData();
+    cout << "Unreal data is at " << unreal_ptr.get()->getBaseAddress() << endl;
 
     HANDLE victim = openProcessByName("unreal-hacking.exe");
     auto regions = getProcessMemoryRegions(victim);
