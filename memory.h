@@ -3,7 +3,6 @@
 
 #include <iostream>
 #include <memory>
-#include <set>
 #include <vector>
 #include <windows.h>
 #include "exceptions.h"
@@ -19,21 +18,14 @@ public:
     bool includes(const void *address);
 };
 
-class RemoteMemoryAddress {
+class RemoteDataReference {
 public:
-    RemoteMemoryAddress(const void *local, const void *remote) : local(local), remote(remote) {}
+    RemoteDataReference(
+        const void *local, const void *remote, const std::shared_ptr<const void> localCopy
+    ) : local(local), remote(remote), localCopy(localCopy) {}
     const void * const local;
     const void * const remote;
-};
-
-class ScanResults {
-public:
-    ScanResults(
-        const std::set<std::shared_ptr<const void>> &regions,
-        const std::vector<RemoteMemoryAddress> &addresses
-    ) : regions(regions), addresses(addresses) {}
-    const std::set<std::shared_ptr<const void>> regions;
-    const std::vector<RemoteMemoryAddress> addresses;
+    const std::shared_ptr<const void> localCopy;
 };
 
 std::ostream &operator<<(std::ostream &os, const MemoryRegion &region);
@@ -46,7 +38,7 @@ std::vector<MemoryRegion> getProcessMemoryRegions(HANDLE hProcess);
 
 void *memmem(void *haystack, size_t haystacklen, const void *needle, size_t needlelen);
 std::unique_ptr<unsigned char> CopyProcessMemory(HANDLE hProcess, const MemoryRegion &region);
-ScanResults ScanProcessMemory(
+std::vector<RemoteDataReference> ScanProcessMemory(
     HANDLE hProcess, const std::vector<MemoryRegion> &regions, const void *goal, size_t goalLength
 );
 

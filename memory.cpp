@@ -106,11 +106,10 @@ unique_ptr<unsigned char> CopyProcessMemory(HANDLE hProcess, const MemoryRegion 
     return bufferPointer;
 }
 
-ScanResults ScanProcessMemory(
+std::vector<RemoteDataReference> ScanProcessMemory(
     HANDLE hProcess, const vector<MemoryRegion> &regions, const void *goal, size_t goalLength
 ) {
-    set<shared_ptr<const void>> matchingRegions;
-    vector<RemoteMemoryAddress> matchingAddresses;
+    std::vector<RemoteDataReference> matches;
 
     for(MemoryRegion region : regions) {
         shared_ptr<void> regionPointer = CopyProcessMemory(hProcess, region);
@@ -128,12 +127,11 @@ ScanResults ScanProcessMemory(
                 size_t searchDistance = pointerOffset(data, result);
                 data = increasePointer(result, goalLength);
                 remainingBytes -= goalLength + searchDistance;
-                matchingRegions.insert(regionPointer);
-                matchingAddresses.push_back(
-                    RemoteMemoryAddress(result, increasePointer(result, localToRemote))
-                );
+                matches.push_back(RemoteDataReference(
+                    result, increasePointer(result, localToRemote), regionPointer
+                ));
             }
         } while(result && region.includes(result));
     }
-    return ScanResults(matchingRegions, matchingAddresses);
+    return matches;
 }
