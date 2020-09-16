@@ -10,17 +10,15 @@ class UnrealObjectRef {
 public:
     static UnrealObjectRef readFromAddress(const void *addr);
     UnrealObjectRef(unsigned long index, const char *name, const void *data, const void *nextAddr);
-    UnrealObjectRef next();
-    void dump();
+    UnrealObjectRef next() const;
+    void dump() const;
 
-    // TODO: These objects should be immutable, then we wouldn't need 'friend's
-    unsigned long index;
-    const char *name;
-    const void *data;
+    const unsigned long index;
+    const char * const name;
+    const void * const data;
 
 private:
-    const void *nextAddr;
-    friend class WritableObjectChain;
+    const void * const nextAddr;
 };
 
 class ObjectChain {
@@ -41,9 +39,10 @@ public:
     void appendObject(const UnrealObjectRef &obj);
 
 private:
-    size_t remainingBytes;
-    UnrealObjectRef tail;
     std::unique_ptr<unsigned char> allocated;
+    size_t remainingBytes;
+    unsigned long nextIndex;
+    void *nextWriteAddr;
 };
 
 std::unique_ptr<WritableObjectChain> createUnrealData();

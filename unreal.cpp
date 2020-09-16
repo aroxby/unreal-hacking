@@ -18,11 +18,11 @@ UnrealObjectRef::UnrealObjectRef(
     unsigned long index, const char *name, const void *data, const void *nextAddr
 ) : index(index), name(name), data(data), nextAddr(nextAddr) { }
 
-UnrealObjectRef UnrealObjectRef::next() {
+UnrealObjectRef UnrealObjectRef::next() const {
     return UnrealObjectRef::readFromAddress(nextAddr);
 }
 
-void UnrealObjectRef::dump() {
+void UnrealObjectRef::dump() const {
     cout << '('
         << int(index) << ", "
         << (void*)(name) << '(' << name << "), "
@@ -51,7 +51,7 @@ WritableObjectChain WritableObjectChain::allocateChain(size_t bytes) {
 }
 
 WritableObjectChain::WritableObjectChain(void *baseAddress) :
-    ObjectChain(baseAddress), tail(-2, nullptr, nullptr, baseAddress), remainingBytes(0) { }
+    ObjectChain(baseAddress), remainingBytes(0), nextIndex(0), nextWriteAddr(baseAddress) { }
 
 void WritableObjectChain::appendObject(const UnrealObjectRef &obj) {
     size_t totalBytes = sizeof(obj.index) + sizeof(obj.data) + strlen(obj.name) + 7;
@@ -61,21 +61,15 @@ void WritableObjectChain::appendObject(const UnrealObjectRef &obj) {
         msg << totalBytes << " bytes required but only " << remainingBytes << " are available!";
         throw ChainOverflowError(msg.str());
     } else {
-        unsigned long nextIndex = tail.index + 2;
-        void *nextWrite = (void *)tail.nextAddr;
-
-        memcpy(nextWrite, &nextIndex, sizeof(nextIndex));
-        nextWrite = increasePointer(nextWrite, sizeof(nextIndex));
-        strcpy((char *)nextWrite, obj.name);
-        nextWrite = increasePointer(nextWrite, strlen(obj.name));
-        memcpy(nextWrite, "\0\0\0\0\0\0", 7);
-        nextWrite = increasePointer(nextWrite, 7);
-        memcpy(nextWrite, &obj.data, sizeof(obj.data));
-        nextWrite = increasePointer(nextWrite, sizeof(obj.data));
-        tail.index = nextIndex;
-        tail.name = obj.name;
-        tail.data = obj.data;
-        tail.nextAddr = nextWrite;
+        memcpy(nextWriteAddr, &nextIndex, sizeof(nextIndex));
+        nextWriteAddr = increasePointer(nextWriteAddr, sizeof(nextIndex));
+        strcpy((char *)nextWriteAddr, obj.name);
+        nextWriteAddr = increasePointer(nextWriteAddr, strlen(obj.name));
+        memcpy(nextWriteAddr, "\0\0\0\0\0\0", 7);
+        nextWriteAddr = increasePointer(nextWriteAddr, 7);
+        memcpy(nextWriteAddr, &obj.data, sizeof(obj.data));
+        nextWriteAddr = increasePointer(nextWriteAddr, sizeof(obj.data));
+        nextIndex += 2;
         remainingBytes -= totalBytes;
     }
 }
