@@ -13,6 +13,7 @@ public:
     UnrealObjectRef next();
     void dump();
 
+    // TODO: These objects should be immutable, then we wouldn't need 'friend's
     unsigned long index;
     const char *name;
     const void *data;
